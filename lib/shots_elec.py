@@ -452,7 +452,7 @@ def am_pm(cr, s):
     dot(cr, cx, cy, px(10), c2, 0.95)
     # shaded half for PM
     cr.save()
-    cr.arc(cx, cy, R, -math.pi / 2, a, False)
+    cr.arc(cx, cy, R, -math.pi / 2, a)
     cr.line_to(cx, cy)
     cr.close_path()
     cr.set_source_rgba(*c2, 0.10 * k)
