@@ -9,7 +9,7 @@ CRITICAL: stdout belongs to ffmpeg.  Every message goes to stderr.  A stray
 print() injects bytes mid-row, which wraps the picture horizontally and shifts
 the BGRA channels — it looks like a rendering bug but it is I/O pollution.
 """
-import os, sys, time, subprocess, argparse, shutil, tempfile
+import os, sys, time, subprocess, argparse, shutil, tempfile, traceback
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -20,9 +20,19 @@ import render_lib  # noqa: E402
 import mv_frame  # noqa: E402
 
 
+LOGFILE = os.environ.get('RENDER_LOG')
+
+
 def log(msg):
-    sys.stderr.write(msg + '\n')
+    line = '[%s] %s' % (time.strftime('%H:%M:%S'), msg)
+    sys.stderr.write(line + '\n')
     sys.stderr.flush()
+    if LOGFILE:
+        try:
+            with open(LOGFILE, 'a') as f:
+                f.write(line + '\n')
+        except Exception:
+            pass
 
 
 def main():
