@@ -168,7 +168,10 @@ def radial_surface(n, stops, size=256):
 
 
 def glow(cr, cx, cy, r, col, alpha=1.0, key=None, falloff=1.0):
-    """Radial glow, cached by key."""
+    """Radial glow, cached by key.  Sub-pixel radii are skipped: cairo raises
+    "invalid matrix (not invertible)" on a degenerate scale."""
+    if r < 0.5 or alpha <= 0.004:
+        return
     def build():
         stops = []
         n = 12
