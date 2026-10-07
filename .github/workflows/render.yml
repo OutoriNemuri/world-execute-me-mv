@@ -1,0 +1,66 @@
+name: Render MV
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md']
+  workflow_dispatch:
+    inputs:
+      preview:
+        description: 'Render a short preview instead of the full video'
+        type: boolean
+        default: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install system deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            libcairo2-dev libpango1.0-dev libgirepository1.0-dev \
+            gir1.2-pango-1.0 python3-gi python3-cairo \
+            ffmpeg fonts-dejavu-core
+
+      - name: Install python deps
+        run: pip install --no-cache-dir pycairo pygobject pillow
+
+      - name: Register bundled fonts
+        run: |
+          sudo mkdir -p /usr/local/share/fonts/wem
+          sudo cp fonts/*.ttf fonts/*.otf /usr/local/share/fonts/wem/
+          sudo fc-cache -f
+          fc-match "Inter"
+          fc-match "Source Han Sans SC"
+          fc-match "Source Han Sans CN"
+
+      - name: Render testcard
+        run: python3 tools/make_testcard.py out/testcard
+
+      - name: Upload testcard
+        uses: actions/upload-artifact@v4
+        with:
+          name: testcard
+          path: out/testcard/
+          if-no-files-found: warn
+
+      - name: Render MV
+        run: |
+          python3 tools/render_gha.py out/world.execute-me.mv.mp4 \
+            ${{ github.event.inputs.preview == 'true' && '--preview' || '' }}
+
+      - name: Upload MV
+        uses: actions/upload-artifact@v4
+        with:
+          name: world-execute-me-mv
+          path: out/*.mp4
+          if-no-files-found: error
+          compression-level: 0

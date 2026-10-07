@@ -1,0 +1,8 @@
+out/
+*.mp4
+*.wav
+__pycache__/
+*.pyc
+_fonttest.png
+_o*.wav
+_onsets.wav
