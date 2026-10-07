@@ -119,11 +119,12 @@ class ShotCtx:
         self._vals = {}
 
     def g(self, key, seed, lo, hi):
+        """A stable pair of values for a shot, so camera motion is smooth."""
         k = '%s_%s' % (key, seed)
         if k not in self._vals:
-            self._vals[k] = lo + (hi - lo) * rnd(seed, len(self._vals) + 1)
-        v = self._vals[k]
-        return v
+            self._vals[k] = (lo + (hi - lo) * rnd(seed, len(self._vals) + 1),
+                             lo + (hi - lo) * rnd(seed + 991, len(self._vals) + 3))
+        return self._vals[k]
 
 
 def render(cr, t):
