@@ -16,20 +16,16 @@ from PIL import Image  # noqa: E402
 import render_lib  # noqa: E402
 import mv_frame  # noqa: E402
 
-# one frame from each movement, plus every title card
-SAMPLES = [
-    1.0, 3.0, 6.5, 8.0, 11.0, 13.5,
-    16.8, 20.2, 22.6, 25.6, 28.4,
-    30.5, 34.5, 38.0, 40.2, 43.5,
-    45.5, 47.5, 50.5, 52.5, 56.5, 58.5,
-    61.5, 65.0, 69.0, 71.5, 74.0,
-    76.0, 78.5, 81.0, 84.0, 86.0,
-    89.5, 92.5, 95.0, 98.5, 101.0, 103.0,
-    107.0, 110.0, 113.0, 116.5, 119.0,
-    123.0, 127.0, 130.0, 133.0,
-    149.0, 157.0, 160.0, 164.0, 168.0, 172.0, 176.0,
-    182.0, 186.0, 189.0, 192.0, 210.0,
-]
+def sample_times():
+    """One frame from the middle of EVERY shot, so a broken shot is caught
+    here rather than 7 minutes into the full render."""
+    import mv_frame
+    tbl = mv_frame.load_timeline()
+    ts = []
+    for sh in tbl:
+        mid = (sh['t0'] + sh['t1']) * 0.5
+        ts.append(round(mid, 3))
+    return ts
 
 
 def main():
@@ -45,7 +41,7 @@ def main():
     cr = cairo.Context(surf)
 
     tiles = []
-    for t in SAMPLES:
+    for t in sample_times():
         mv_frame.render(cr, t)
         surf.flush()
         im = Image.frombuffer('RGBA', (render_lib.W, render_lib.H),

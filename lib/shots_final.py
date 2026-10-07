@@ -1,3 +1,16 @@
+# -*- coding: utf-8 -*-
+"""shots_final — the shots that only the plan table needs.
+
+Kept separate so the main movement modules stay readable.
+"""
+import math
+import cairo
+from render_lib import (W, H, TAU, px, mix, shade, clamp01, smoothstep, ease_out,
+                        ease_in, ease_io, text_at, text_glow, grad_rect, dashed_line,
+                        arrow, dot, ring, poly, glow, blit, FONT_EN, FONT_ZH)
+from scene_paint import rnd, hex_grid, grid_lines, dot_field, glow as _g
+
+
 
 
 def enter(cr, s):

@@ -2,7 +2,7 @@
 """shots_love — movements H–K: execution, the count, and love as a formula."""
 import math
 from render_lib import (W, H, TAU, px, mix, shade, clamp01, smoothstep, ease_out,
-                        ease_in, pulse, text_at, text_glow, grad_rect, dashed_line,
+                        ease_in, ease_io, pulse, text_at, text_glow, grad_rect, dashed_line,
                         arrow, dot, ring, poly, glow, blit, FONT_EN, FONT_ZH)
 from scene_paint import (rnd, hex_grid, dot_field, grid_lines, crosshair, waveform,
                          oscilloscope, pcb_network, concentric, orbit_ring,
