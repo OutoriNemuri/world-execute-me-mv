@@ -157,9 +157,8 @@ def render(cr, t):
         draw_hud(cr, t, sh, style)
 
     # ---- finishing -------------------------------------------------------
-    noise(cr, t, 0.022, sh.get('uid', 0))
     vignette(cr, 0.50)
-    scanlines(cr, 0.028, 3)
+    scanlines(cr, 0.030, 3)
 
 
 # ------------------------------------------------------------------ lyric ---

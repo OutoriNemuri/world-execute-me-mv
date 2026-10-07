@@ -125,6 +125,10 @@ def surface_pattern(surf, x, y, w, h, alpha=1.0):
     EXTEND_PAD is mandatory: without it cairo *tiles* the pattern and the
     canvas edges turn into a repeating seam.
     """
+    # a zero (or negative) scale makes the matrix non-invertible and cairo
+    # raises "invalid matrix"; clamp to something harmless instead
+    if abs(w) < 1e-3 or abs(h) < 1e-3:
+        return None
     pat = cairo.SurfacePattern(surf)
     pat.set_extend(cairo.EXTEND_PAD)
     sx = w / surf.get_width()
@@ -137,8 +141,11 @@ def surface_pattern(surf, x, y, w, h, alpha=1.0):
 
 
 def blit(cr, surf, x, y, w, h, alpha=1.0):
+    pat = surface_pattern(surf, x, y, w, h)
+    if pat is None:
+        return
     cr.save()
-    cr.set_source(surface_pattern(surf, x, y, w, h))
+    cr.set_source(pat)
     if alpha < 1.0:
         cr.paint_with_alpha(alpha)
     else:
@@ -368,31 +375,48 @@ def poly(cr, pts, color, alpha=1.0, width=2.0, close=False, fill=False):
     cr.restore()
 
 
-def vignette(cr, strength=0.55, key='vig'):
-    surf = cached(key, lambda: _vignette_surface())
-    blit(cr, surf, 0, 0, W, H, strength)
-
-
-def _vignette_surface():
-    surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, 256, 144)
-    cr = cairo.Context(surf)
-    g = cairo.RadialGradient(128, 72, 40, 128, 72, 160)
+def _vignette_mask():
+    """A8 alpha ramp.  Masking is dramatically cheaper than alpha-painting a
+    scaled ARGB surface, which dominated the frame budget on CI."""
+    m = cairo.ImageSurface(cairo.FORMAT_A8, 256, 144)
+    cr = cairo.Context(m)
+    g = cairo.RadialGradient(128, 72, 40, 128, 72, 158)
     g.add_color_stop_rgba(0.0, 0, 0, 0, 0.0)
-    g.add_color_stop_rgba(0.62, 0, 0, 0, 0.10)
-    g.add_color_stop_rgba(1.0, 0, 0, 0, 0.92)
+    g.add_color_stop_rgba(0.62, 0, 0, 0, 0.12)
+    g.add_color_stop_rgba(1.0, 0, 0, 0, 1.0)
     cr.set_source(g)
     cr.paint()
-    return surf
+    return m
+
+
+def vignette(cr, strength=0.55, key='vig'):
+    mask = cached((key, 'mask'), _vignette_mask)
+    pat = cairo.SurfacePattern(mask)
+    pat.set_extend(cairo.EXTEND_PAD)
+    m = cairo.Matrix()
+    m.scale(W / 256.0, H / 144.0)
+    pat.set_matrix(m)
+    cr.save()
+    cr.set_source_rgba(0, 0, 0, strength)
+    cr.mask(pat)
+    cr.restore()
 
 
 def scanlines(cr, alpha=0.05, step=3):
+    """Cached A8 stripe mask — one mask() call instead of ~360 rectangles."""
+    def build():
+        m = cairo.ImageSurface(cairo.FORMAT_A8, 4, step)
+        mc = cairo.Context(m)
+        mc.set_source_rgba(0, 0, 0, 1.0)
+        mc.rectangle(0, 0, 4, 1)
+        mc.fill()
+        return m
+    tile = cached(('scan', step), build)
+    pat = cairo.SurfacePattern(tile)
+    pat.set_extend(cairo.EXTEND_REPEAT)
     cr.save()
     cr.set_source_rgba(0, 0, 0, alpha)
-    y = 0
-    while y < H:
-        cr.rectangle(0, y, W, px(1.1))
-        y += step
-    cr.fill()
+    cr.mask(pat)
     cr.restore()
 
 
